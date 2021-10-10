@@ -1,0 +1,88 @@
+---
+output: github_document
+always_allow_html: true
+
+---
+
+
+```{r, include = FALSE}
+# knitr::opts_chunk$set(
+#   collapse = TRUE,
+#   comment = "#>",
+#   fig.path = "man/figures/README-",
+#   out.width = "100%"
+# )
+knitr::opts_chunk$set(
+  warning = F,
+  message = F
+)
+
+options(tibble.print_min = 5, tibble.print_max = 5, tibble.width = Inf)
+
+```
+
+# tidyreport
+
+
+## Overview
+
+tidyreport is a pipeline to conduct common statistical analyses, especially those done in the field of epidemiology and biostatistics and generate clean/formatted tables from the statistical output. The analyses include sample descriptive statistics, univariable testing (Wilcoxon rank sum, KW tests, Chisq/Fisher), regression analysis (linear, logistic, tobit, ordinal, LME, Normal GEE, Logistic GEE, Poisson GEE, Ordinal GEE, cox). The generated tables can be readily copied into Excel or Word for scientific paper writing.
+
+The main functions are:
+
+* `get_desc_stat()` generates descrptive statistics of the sample.
+* `get_desc_stat_grouping()` generates descrptive statistics of the sample and stratified by a grouping variable, along with statistical testing of group differences.
+* `get_regression_estimates()` runs different types of regression and summarizes its results.
+* `cox_summary()` summarizes the results of cox regression. 
+
+
+## Installation 
+
+```{r, eval = FALSE}
+install.packages("devtools")
+devtools::install_github("JiyueQin/tidyreport")
+```
+
+
+## Usage 
+
+
+```{r}
+library(tidyreport)
+# here is a sample dataset modified from the dataset starwars in tidyverse .
+str(sample_dat)
+```
+
+
+### Get sample descriptive statistics
+
+```{r}
+get_desc_stat(sample_dat)
+```
+
+### Get descriptive statistics stratified by groups
+
+```{r}
+# stratified by gender and testing for gender difference 
+get_desc_stat_grouping(sample_dat, 'gender')
+
+# report median(IQR) instead of mean(SD) for height, highlight significant p values(default is 0.05)
+get_desc_stat_grouping(sample_dat, 'gender', median_vars = 'height', highlight=T)
+
+# get detailed descriptive statistics stratified by gender, sort the table by the order of variables in the data, no statistical testing
+get_desc_stat_grouping(sample_dat, 'gender', detail = T, sort = T, test = F)
+
+```
+
+### Regression 
+
+
+```{r}
+# get formatted table for a logistic regression model
+get_regression_estimates(dplyr::mutate(sample_dat, gender = as.factor(gender)), outcome = 'gender', predictor_vec = c( 'height', 'hair_color_group'), outcome_type = 'binary', format =T)
+
+# perform linear regression for multiple outcomes with purrr and get tables with kableExtra
+purrr::map_df(c('height', 'mass'), ~get_regression_estimates(sample_dat, outcome = .x, predictor_vec = c( 'sex', 'hair_color_group'), outcome_type = 'linear')) %>% kableExtra::kable() %>% kableExtra::kable_styling() %>% kableExtra::collapse_rows(1)
+
+```
+

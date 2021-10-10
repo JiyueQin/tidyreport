@@ -71,7 +71,9 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
 
   formula = as.formula(formula_char)
 
-  if(str_detect(outcome_type, 'gee|lme') & any(sort(df$id)!=df$id)){stop("Please make sure data is sorted by ID")}
+  if(str_detect(outcome_type, 'gee|lme')){
+    if(!'id'%in% colnames(df)){stop('Please make sure there is a column named `id` in your data!')}
+    if(any(sort(df$id)!=df$id)){stop("Please make sure data is sorted by ID!")}}
 
   if(outcome_type == 'linear') {
     fit = lm(formula, data = df, weights = weights)
@@ -123,7 +125,7 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
       select(term, coef = Estimate, low, up, p = `Pr(>|z|)`)
   }
   if(outcome_type == 'normal_gee'){
-    fit = gee(formula, data = df, id = id, corstr = "unstructured")
+    fit = gee::gee(formula, data = df, id = id, corstr = "unstructured")
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
       add_column(term = rownames(.)) %>%
       mutate(low = Estimate - 1.96*`Robust S.E.`,
@@ -133,7 +135,7 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
 
   }
   if(outcome_type == 'binary_gee'){
-    fit = gee(formula, data = df, family = "binomial", id = id, corstr = "unstructured")
+    fit = gee::gee(formula, data = df, family = "binomial", id = id, corstr = "unstructured")
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
       add_column(term = rownames(.)) %>%
       mutate(OR = exp(Estimate),
@@ -144,7 +146,7 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
 
   }
   if(outcome_type == 'poisson_gee'){
-    fit = gee(formula, data = df, family = "poisson", id = id, corstr = "unstructured")
+    fit = gee::gee(formula, data = df, family = "poisson", id = id, corstr = "unstructured")
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
       rownames_to_column('term') %>%
       mutate(RR = exp(Estimate),
@@ -165,8 +167,8 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
   }
 
   if(outcome_type == 'lme'){
-    fit = lme(formula, random = ~1|id, na.action = na.omit, data = df)
-    CI = intervals(fit)$fixed %>% as.data.frame() %>% rownames_to_column('term')
+    fit = nlme::lme(formula, random = ~1|id, na.action = na.omit, data = df)
+    CI = nlme::intervals(fit)$fixed %>% as.data.frame() %>% rownames_to_column('term')
     summary_fit = summary(fit)
     estimates_table = summary_fit$tTable %>% as.data.frame() %>% rownames_to_column('term') %>%
       janitor::clean_names() %>%

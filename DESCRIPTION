@@ -1,15 +1,17 @@
 Package: tidyreport
-Title: What the Package Does (One Line, Title Case)
+Title: generate tidy reports of statistical analysis
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Jiyue",
+           family = "Qin",
            role = c("aut", "cre"),
-           email = "first.last@example.com")
-Description: What the package does (one paragraph).
-License: What license it uses
+           email = "jiyue.qin@einsteinmed.org")
+Description: A pipeline to conduct common statistical analyses, especially those done in the field of epidemiology and biostatistics and generate clean/formatted tables from the statistical output. The analyses include sample descriptive statistics, univariable testing (Wilcoxon rank sum, KW tests, Chisq/Fisher), regression analysis(linear, logistic, tobit, ordinal, LME, Normal GEE, Logistic GEE, Poisson GEE, Ordinal GEE, cox). The generated tables can be readily incorporated into Excel or Word for scientific paper writing.
+License: MIT
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.0
+Depends: 
+    R (>= 3.4.0)
 Imports:
 	dplyr, tibble, knitr, kableExtra, purrr, tidyr
