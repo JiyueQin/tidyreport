@@ -404,8 +404,8 @@ Other
 </table>
 
 ``` r
-# report median(IQR) instead of mean(SD) for height, highlight significant p values(default is 0.05)
-get_desc_stat_grouping(sample_dat, 'gender', median_vars = 'height', highlight=T)
+# report median(IQR) instead of mean(SD) for height
+get_desc_stat_grouping(sample_dat, 'gender', median_vars = 'height')
 ```
 
 <table class="table" style="width: auto !important; ">
@@ -443,8 +443,7 @@ Mass, Mean(SD)
 106.1(185)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: yellow !important;">0.002</span>
+0.002
 </td>
 </tr>
 <tr>
@@ -461,8 +460,7 @@ Height, Median(IQR)
 183(171.2, 193)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: yellow !important;">0.003</span>
+0.003
 </td>
 </tr>
 <tr>
@@ -476,8 +474,7 @@ Sex, N(%)
 <td style="text-align:left;">
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: yellow !important;">&lt;0.001</span>
+&lt;0.001
 </td>
 </tr>
 <tr>
@@ -494,8 +491,6 @@ Female
 0(0)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: white !important;"></span>
 </td>
 </tr>
 <tr>
@@ -512,8 +507,6 @@ Hermaphroditic
 1(1.5)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: white !important;"></span>
 </td>
 </tr>
 <tr>
@@ -530,8 +523,6 @@ Male
 60(90.9)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: white !important;"></span>
 </td>
 </tr>
 <tr>
@@ -548,8 +539,6 @@ None
 5(7.6)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: white !important;"></span>
 </td>
 </tr>
 <tr>
@@ -563,8 +552,7 @@ Haircolor, N(%)
 <td style="text-align:left;">
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: white !important;">0.316</span>
+0.316
 </td>
 </tr>
 <tr>
@@ -581,8 +569,6 @@ Black
 9(13.6)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: white !important;"></span>
 </td>
 </tr>
 <tr>
@@ -599,8 +585,6 @@ Brown
 11(16.7)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: white !important;"></span>
 </td>
 </tr>
 <tr>
@@ -617,8 +601,6 @@ None
 31(47)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: white !important;"></span>
 </td>
 </tr>
 <tr>
@@ -635,8 +617,6 @@ Other
 15(22.7)
 </td>
 <td style="text-align:left;">
-<span
-style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; background-color: white !important;"></span>
 </td>
 </tr>
 </tbody>
