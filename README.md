@@ -1,6 +1,9 @@
 
 # tidyreport
 
+For the best display of the readme file, please use the following link
+to the HTML site: [readme](README.html)
+
 ## Overview
 
 tidyreport is a pipeline to conduct common statistical analyses,
@@ -1151,10 +1154,10 @@ other vs black
 
 ``` r
 # perform linear regression for multiple outcomes with purrr and get tables with kableExtra
-purrr::map_df(c('height', 'mass'), ~get_regression_estimates(sample_dat, outcome = .x, predictor_vec = c( 'sex', 'hair_color_group'), outcome_type = 'linear')) %>% kableExtra::kable() %>% kableExtra::kable_styling() %>% kableExtra::collapse_rows(1)
+purrr::map_df(c('height', 'mass'), ~get_regression_estimates(sample_dat, outcome = .x, predictor_vec = c( 'sex', 'hair_color_group'), outcome_type = 'linear')) %>% kableExtra::kable() %>% kableExtra::kable_styling(full_width = F) %>% kableExtra::collapse_rows(1)
 ```
 
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:left;">

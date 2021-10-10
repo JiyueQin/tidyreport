@@ -1,6 +1,5 @@
 ---
-title: readme
-output: html_document
+output: github_document
 always_allow_html: true
 
 ---
@@ -24,6 +23,8 @@ options(tibble.print_min = 5, tibble.print_max = 5, tibble.width = Inf)
 
 # tidyreport
 
+For the best display of the readme file, please use the following link to the HTML site:
+[readme](README.html)
 
 ## Overview
 
@@ -83,7 +84,7 @@ get_desc_stat_grouping(sample_dat, 'gender', detail = T, sort = T, test = F)
 get_regression_estimates(dplyr::mutate(sample_dat, gender = as.factor(gender)), outcome = 'gender', predictor_vec = c( 'height', 'hair_color_group'), outcome_type = 'binary', format =T)
 
 # perform linear regression for multiple outcomes with purrr and get tables with kableExtra
-purrr::map_df(c('height', 'mass'), ~get_regression_estimates(sample_dat, outcome = .x, predictor_vec = c( 'sex', 'hair_color_group'), outcome_type = 'linear')) %>% kableExtra::kable() %>% kableExtra::kable_styling() %>% kableExtra::collapse_rows(1)
+purrr::map_df(c('height', 'mass'), ~get_regression_estimates(sample_dat, outcome = .x, predictor_vec = c( 'sex', 'hair_color_group'), outcome_type = 'linear')) %>% kableExtra::kable() %>% kableExtra::kable_styling(full_width = F) %>% kableExtra::collapse_rows(1)
 
 ```
 
