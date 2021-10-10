@@ -1,5 +1,6 @@
 ---
-output: github_document
+title: readme
+output: html_document
 always_allow_html: true
 
 ---
