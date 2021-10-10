@@ -1,9 +1,6 @@
 
 # tidyreport
 
-For the best display of the readme file, please use the following link
-to the HTML site: [readme](README.html)
-
 ## Overview
 
 tidyreport is a pipeline to conduct common statistical analyses,
@@ -41,11 +38,11 @@ str(sample_dat)
 ```
 
     ## tibble[,5] [83 x 5] (S3: tbl_df/tbl/data.frame)
-    ##  $ height          : int [1:83] 172 167 96 202 150 178 165 97 183 182 ...
-    ##  $ sex             : chr [1:83] "male" "none" "none" "male" ...
-    ##  $ gender          : chr [1:83] "masculine" "masculine" "masculine" "masculine" ...
-    ##  $ mass            : num [1:83] 77 75 32 136 49 120 75 32 84 77 ...
-    ##  $ hair_color_group: chr [1:83] "other" "other" "other" "none" ...
+    ##  $ height   : int [1:83] 172 167 96 202 150 178 165 97 183 182 ...
+    ##  $ sex      : chr [1:83] "male" "none" "none" "male" ...
+    ##  $ gender   : chr [1:83] "masculine" "masculine" "masculine" "masculine" ...
+    ##  $ mass     : num [1:83] 77 75 32 136 49 120 75 32 84 77 ...
+    ##  $ haircolor: chr [1:83] "other" "other" "other" "none" ...
 
 ### Get sample descriptive statistics
 
@@ -145,7 +142,7 @@ Masculine
 </tr>
 <tr>
 <td style="text-align:left;">
-Hair\_color\_group, N(%)
+Haircolor, N(%)
 </td>
 <td style="text-align:left;">
 </td>
@@ -327,7 +324,7 @@ None
 </tr>
 <tr>
 <td style="text-align:left;">
-Hair\_color\_group, N(%)
+Haircolor, N(%)
 </td>
 <td style="text-align:left;">
 </td>
@@ -557,7 +554,7 @@ style="     border-radius: 4px; padding-right: 4px; padding-left: 4px; backgroun
 </tr>
 <tr>
 <td style="text-align:left;">
-Hair\_color\_group, N(%)
+Haircolor, N(%)
 </td>
 <td style="text-align:left;">
 </td>
@@ -983,7 +980,7 @@ Nmiss
 </tr>
 <tr>
 <td style="text-align:left;">
-Hair\_color\_group, N(%)
+Haircolor, N(%)
 </td>
 <td style="text-align:left;">
 </td>
@@ -1055,7 +1052,7 @@ Other
 
 ``` r
 # get formatted table for a logistic regression model
-get_regression_estimates(dplyr::mutate(sample_dat, gender = as.factor(gender)), outcome = 'gender', predictor_vec = c( 'height', 'hair_color_group'), outcome_type = 'binary', format =T)
+get_regression_estimates(dplyr::mutate(sample_dat, gender = as.factor(gender)), outcome = 'gender', predictor_vec = c( 'height', 'haircolor'), outcome_type = 'binary', format =T)
 ```
 
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -1098,7 +1095,7 @@ height
 </tr>
 <tr>
 <td style="text-align:left;">
-hair\_color\_group
+haircolor
 </td>
 <td style="text-align:left;">
 </td>
@@ -1154,7 +1151,7 @@ other vs black
 
 ``` r
 # perform linear regression for multiple outcomes with purrr and get tables with kableExtra
-purrr::map_df(c('height', 'mass'), ~get_regression_estimates(sample_dat, outcome = .x, predictor_vec = c( 'sex', 'hair_color_group'), outcome_type = 'linear')) %>% kableExtra::kable() %>% kableExtra::kable_styling(full_width = F) %>% kableExtra::collapse_rows(1)
+purrr::map_df(c('height', 'mass'), ~get_regression_estimates(sample_dat, outcome = .x, predictor_vec = c( 'sex', 'haircolor'), outcome_type = 'linear')) %>% kableExtra::kable() %>% kableExtra::kable_styling(full_width = F) %>% kableExtra::collapse_rows(1)
 ```
 
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -1239,7 +1236,7 @@ sexnone
 </tr>
 <tr>
 <td style="text-align:left;">
-hair\_color\_groupbrown
+haircolorbrown
 </td>
 <td style="text-align:left;">
 1.85
@@ -1253,7 +1250,7 @@ hair\_color\_groupbrown
 </tr>
 <tr>
 <td style="text-align:left;">
-hair\_color\_groupnone
+haircolornone
 </td>
 <td style="text-align:left;">
 8.66
@@ -1267,7 +1264,7 @@ hair\_color\_groupnone
 </tr>
 <tr>
 <td style="text-align:left;">
-hair\_color\_groupother
+haircolorother
 </td>
 <td style="text-align:left;">
 -6.87
@@ -1340,7 +1337,7 @@ sexnone
 </tr>
 <tr>
 <td style="text-align:left;">
-hair\_color\_groupbrown
+haircolorbrown
 </td>
 <td style="text-align:left;">
 5.85
@@ -1354,7 +1351,7 @@ hair\_color\_groupbrown
 </tr>
 <tr>
 <td style="text-align:left;">
-hair\_color\_groupnone
+haircolornone
 </td>
 <td style="text-align:left;">
 2.05
@@ -1368,7 +1365,7 @@ hair\_color\_groupnone
 </tr>
 <tr>
 <td style="text-align:left;">
-hair\_color\_groupother
+haircolorother
 </td>
 <td style="text-align:left;">
 -10.23

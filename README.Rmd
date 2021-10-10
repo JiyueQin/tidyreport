@@ -23,9 +23,6 @@ options(tibble.print_min = 5, tibble.print_max = 5, tibble.width = Inf)
 
 # tidyreport
 
-For the best display of the readme file, please use the following link to the HTML site:
-[readme](README.html)
-
 ## Overview
 
 tidyreport is a pipeline to conduct common statistical analyses, especially those done in the field of epidemiology and biostatistics and generate clean/formatted tables from the statistical output. The analyses include sample descriptive statistics, univariable testing (Wilcoxon rank sum, KW tests, Chisq/Fisher), regression analysis (linear, logistic, tobit, ordinal, LME, Normal GEE, Logistic GEE, Poisson GEE, Ordinal GEE, cox). The generated tables can be readily copied into Excel or Word for scientific paper writing.
@@ -81,10 +78,10 @@ get_desc_stat_grouping(sample_dat, 'gender', detail = T, sort = T, test = F)
 
 ```{r}
 # get formatted table for a logistic regression model
-get_regression_estimates(dplyr::mutate(sample_dat, gender = as.factor(gender)), outcome = 'gender', predictor_vec = c( 'height', 'hair_color_group'), outcome_type = 'binary', format =T)
+get_regression_estimates(dplyr::mutate(sample_dat, gender = as.factor(gender)), outcome = 'gender', predictor_vec = c( 'height', 'haircolor'), outcome_type = 'binary', format =T)
 
 # perform linear regression for multiple outcomes with purrr and get tables with kableExtra
-purrr::map_df(c('height', 'mass'), ~get_regression_estimates(sample_dat, outcome = .x, predictor_vec = c( 'sex', 'hair_color_group'), outcome_type = 'linear')) %>% kableExtra::kable() %>% kableExtra::kable_styling(full_width = F) %>% kableExtra::collapse_rows(1)
+purrr::map_df(c('height', 'mass'), ~get_regression_estimates(sample_dat, outcome = .x, predictor_vec = c( 'sex', 'haircolor'), outcome_type = 'linear')) %>% kableExtra::kable() %>% kableExtra::kable_styling(full_width = F) %>% kableExtra::collapse_rows(1)
 
 ```
 
