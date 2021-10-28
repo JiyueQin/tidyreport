@@ -104,6 +104,17 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
              OR = exp(estimate)) %>%
       select(term, coef = OR, low, up, p = p.value)
   }
+  if(outcome_type == 'poisson') {
+    fit = glm(formula, family=poisson, data = df)
+    CI = confint.default(fit) %>% as.data.frame() %>%  add_column(term = rownames(.))
+
+    estimates_table = broom::tidy(fit) %>%
+      inner_join(CI, by = 'term') %>%
+      mutate(low = exp(`2.5 %`),
+             up = exp(`97.5 %`),
+             RR = exp(estimate)) %>%
+      select(term, coef = RR, low, up, p = p.value)
+  }
   if(outcome_type=='ordinal'){
     ordinal_fit = MASS::polr(formula, data = df, Hess = T)
     estimates_table = broom::tidy(ordinal_fit) %>%
@@ -192,7 +203,7 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
                                              as.character(round(.,3)))) %>%
       mutate(CI = paste0('(', low, ',', up, ')')) %>%
       mutate(CI = ifelse(term == 'AIC', NA, CI))
-    if(outcome_type %in% c('poisson_gee')){
+    if(outcome_type %in% c('poisson_gee', 'poisson')){
       estimates_table = estimates_table %>%  select(outcome, term, RR=coef, CI, p)
     }else{
       estimates_table = estimates_table %>%  select(outcome, term, OR=coef, CI, p)
