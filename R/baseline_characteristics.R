@@ -350,11 +350,38 @@ get_group_compare = function(df, grouping, raw = F, format = T, paired = F){
 }
 
 
+#####################################################################################
+#     Function dichotomize_variable - dichotomize a variable based on its group
+#
+######################################################################################
 
-#' Get Descriptive Stat for the whole sample and multiple subsets
+dichotomize_variable = function(dat, var, group){
+  dat %>% mutate(!!var := ifelse(!!sym(var) == !!group, !!group, 'other'))
+}
+
+
+#####################################################################################
+#     Function dichotomize_compare - perform statistical testing
+#          for each dichotomized variable
+######################################################################################
+
+dichotomize_compare = function(dat, var, grouping){
+  groups = dat %>% pull(var) %>% unique()
+
+  map_df(groups,
+         ~get_group_compare(dichotomize_variable(dat, var, .x) %>%
+                              select(grouping, var),grouping, raw = T, format = F) %>%
+           add_column(group =.x)) %>%
+    unite('variable', variable, group, sep = '_') %>%
+    mutate(variable = tolower(variable))
+
+}
+
+
+#' Get Descriptive Stat for the whole sample and stratified by a grouping variable
 #'
-#' This function generates descriptive stat for all the subsets in the sample based on the grouping variable.
-#' The grouping variable cannot have NA. For all other cattegorical variables, NA will be replaced with Unknown.
+#' This function generates descriptive statistics for the whole sample and stratified by a grouping variable.
+#' The grouping variable cannot have NA. For all other categorical variables, NA will be replaced with Unknown.
 #'
 #' @param dat A dataframe
 #' @param grouping A string, the name of the grouping variable
@@ -367,6 +394,7 @@ get_group_compare = function(df, grouping, raw = F, format = T, paired = F){
 #' @param highlight_p a numeric value of the p value cutoff to highlight, default is 0.05
 #' @param paired logical, paired=T uses wilcoxon signed rank tests, default is F
 #' @param sort logical, sort =T sorts the variables based on their sequence in the data, default is F, which puts continuous variables first
+#' @param dichotomize logical, dichotomize =T calculates p values for each dichotomized version of a categorical variable with overall difference of p<highlight_p,defalt is F
 #' @return A html table for descriptive statistics
 #' @import dplyr
 #' @export
@@ -375,10 +403,10 @@ get_group_compare = function(df, grouping, raw = F, format = T, paired = F){
 
 
 get_desc_stat_grouping = function(dat, grouping, test=T, raw=F, median_vars = NULL, detail = F, detail_simple = F,
-                                  highlight=F, highlight_p=0.05, paired = F, sort = F){
+                                  highlight=F, highlight_p=0.05, paired = F,
+                                  sort = F, dichotomize=F){
   dat = dat %>% mutate_at(grouping, as.character)
 
-  numeric_vars = dat %>% select_if(is.numeric) %>% colnames()
   groups = dat %>% pull(grouping) %>% unique() %>% sort(na.last=T)
   if(anyNA(groups)){stop(paste('There is NA in', grouping, '. Please check.'))}
 
@@ -399,6 +427,18 @@ get_desc_stat_grouping = function(dat, grouping, test=T, raw=F, median_vars = NU
 
   if(test|highlight){
     test_summary =get_group_compare(dat, grouping, raw = T, format = T, paired = paired)
+    if(dichotomize){
+      cat_vars = dat %>% select(-!!sym(grouping)) %>%
+        mutate_if(is.factor, as.character) %>%
+        select_if(is.character) %>% colnames()
+      sig_cat_vars = test_summary %>%
+        filter(variable %in% cat_vars) %>%
+        filter(suppressWarnings(as.numeric(`P Value`))<highlight_p |`P Value` == '<0.001') %>% pull(variable)
+
+      test_summary = bind_rows(test_summary,
+                               map_df(sig_cat_vars, ~dichotomize_compare(dat, .x, grouping)))
+
+    }
     summary_table = summary_table %>% rename(old_variable = variable) %>%
       separate(old_variable, c('variable', 'remove'), sep = ',', remove = F, fill = 'right') %>%
       mutate(variable = tolower(variable))%>% left_join(test_summary) %>%

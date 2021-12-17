@@ -2,7 +2,7 @@
 % Please edit documentation in R/baseline_characteristics.R
 \name{get_desc_stat_grouping}
 \alias{get_desc_stat_grouping}
-\title{Get Descriptive Stat for the whole sample and multiple subsets}
+\title{Get Descriptive Stat for the whole sample and stratified by a grouping variable}
 \usage{
 get_desc_stat_grouping(
   dat,
@@ -15,7 +15,8 @@ get_desc_stat_grouping(
   highlight = F,
   highlight_p = 0.05,
   paired = F,
-  sort = F
+  sort = F,
+  dichotomize = F
 )
 }
 \arguments{
@@ -40,11 +41,13 @@ get_desc_stat_grouping(
 \item{paired}{logical, paired=T uses wilcoxon signed rank tests, default is F}
 
 \item{sort}{logical, sort =T sorts the variables based on their sequence in the data, default is F, which puts continuous variables first}
+
+\item{dichotomize}{logical, dichotomize =T calculates p values for each dichotomized version of a categorical variable with overall difference of p<highlight_p,defalt is F}
 }
 \value{
 A html table for descriptive statistics
 }
 \description{
-This function generates descriptive stat for all the subsets in the sample based on the grouping variable.
-The grouping variable cannot have NA. For all other cattegorical variables, NA will be replaced with Unknown.
+This function generates descriptive statistics for the whole sample and stratified by a grouping variable.
+The grouping variable cannot have NA. For all other categorical variables, NA will be replaced with Unknown.
 }

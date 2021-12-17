@@ -26,7 +26,7 @@ get_regression_estimates(
 
 \item{predictor_vec}{A character vector of predictors}
 
-\item{outcome_type}{A string, can be one of these options:linear, binary, ordinal, tobit, normal_gee,
+\item{outcome_type}{A string, can be one of these options:linear, binary, poisson, ordinal, tobit, normal_gee,
 binary_gee, poisson_gee, ordinal_gee, lme}
 
 \item{format}{logical, format=T outputs a fomatted table, only supported for logistic regression}
