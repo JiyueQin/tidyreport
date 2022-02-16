@@ -40,17 +40,20 @@ test_linear_hypo = function(fit, hypo){
 
 #' Get a summary of regression results
 #'
-#' This function summarizes the results for multiple types of regression
+#' This function summarizes the results for multiple types of regression.
+#' You can specify the model strudture by providing the dataset, outcome and predictors.
+#' Alternatively, you can directly provide the fitted model object.
 #'
-#' @param df A dataframe
-#' @param outcome A string, the name of the outcome
-#' @param predictor_vec A character vector of predictors
+#' @param df A dataframe, optional if you provide fit
+#' @param outcome A string, the name of the outcome, optional if you provide fit
+#' @param predictor_vec A character vector of predictors, optional if you provide fit
 #' @param outcome_type A string, can be one of these options:linear, binary, poisson, ordinal, tobit, normal_gee,
-#' binary_gee, poisson_gee, ordinal_gee, lme
+#' binary_gee, poisson_gee, ordinal_gee, lme, logistic_glme
 #' @param format logical, format=T outputs a fomatted table, only supported for logistic regression
-#' @param interaction a character vector of interaction terms
-#' @param weights a numeric vector of weights
-#' @param tobit_upper a number, the upper bound of tobit models
+#' @param fit A fitted model object, optional if you provide df, outcome and predictor_vec
+#' @param interaction a character vector of interaction terms, optional if you provide fit
+#' @param weights a numeric vector of weights, optional if you provide fit
+#' @param tobit_upper a number, the upper bound of tobit models, optional if you provide fit
 #' @param test_hypo a linear hypothesis, only for linear regression
 #' @param aic logical, aic=T also outputs AIC of the model, only for linear regression
 #' @param highlight, logical, highlight=T highlights p values, default is F
@@ -62,21 +65,27 @@ test_linear_hypo = function(fit, hypo){
 #'
 
 
-get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, format = F, interaction = NULL,
-                                    weights = NULL, tobit_upper = NULL, test_hypo = NULL, aic = F, highlight=F, highlight_p=0.05){
-  formula_char = paste0(outcome, '~', paste(predictor_vec, collapse = '+'))
-  if(!is.null(interaction))
-  {inter_term = paste(interaction, collapse = '*')
-  formula_char = paste0(formula_char, '+',inter_term )}
+get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = NULL, outcome_type, format = F, interaction = NULL,
+                                    fit = NULL, weights = NULL, tobit_upper = NULL, test_hypo = NULL, aic = F, highlight=F, highlight_p=0.05){
+  if(is.null(fit)){
+    formula_char = paste0(outcome, '~', paste(predictor_vec, collapse = '+'))
+    if(!is.null(interaction))
+    {inter_term = paste(interaction, collapse = '*')
+    formula_char = paste0(formula_char, '+',inter_term )}
+    if(outcome_type == 'logistic_glme'){
+      formula_char = paste0(formula_char, '+(1|id)')
+    }
 
-  formula = as.formula(formula_char)
+    formula = as.formula(formula_char)
 
-  if(str_detect(outcome_type, 'gee|lme')){
-    if(!'id'%in% colnames(df)){stop('Please make sure there is a column named `id` in your data!')}
-    if(any(sort(df$id)!=df$id)){stop("Please make sure data is sorted by ID!")}}
+    if(str_detect(outcome_type, 'gee|lme')){
+      if(!'id'%in% colnames(df)){stop('Please make sure there is a column named `id` in your data!')}
+      if(any(sort(df$id)!=df$id)){stop("Please make sure data is sorted by ID!")}}
+  }
 
   if(outcome_type == 'linear') {
-    fit = lm(formula, data = df, weights = weights)
+    if(is.null(fit)){
+      fit = lm(formula, data = df, weights = weights)}
     CI = confint(fit) %>% as.data.frame() %>%  add_column(term = rownames(.))
 
     estimates_table = broom::tidy(fit) %>%
@@ -94,7 +103,8 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
 
   }
   if(outcome_type == 'binary') {
-    fit = glm(formula, family=binomial(link='logit'), data = df)
+    if(is.null(fit)){
+      fit = glm(formula, family=binomial(link='logit'), data = df)}
     CI = confint.default(fit) %>% as.data.frame() %>%  add_column(term = rownames(.))
 
     estimates_table = broom::tidy(fit) %>%
@@ -105,7 +115,8 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
       select(term, coef = OR, low, up, p = p.value)
   }
   if(outcome_type == 'poisson') {
-    fit = glm(formula, family=poisson, data = df)
+    if(is.null(fit)){
+      fit = glm(formula, family=poisson, data = df)}
     CI = confint.default(fit) %>% as.data.frame() %>%  add_column(term = rownames(.))
 
     estimates_table = broom::tidy(fit) %>%
@@ -116,8 +127,9 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
       select(term, coef = RR, low, up, p = p.value)
   }
   if(outcome_type=='ordinal'){
-    ordinal_fit = MASS::polr(formula, data = df, Hess = T)
-    estimates_table = broom::tidy(ordinal_fit) %>%
+    if(is.null(fit)){
+      fit = MASS::polr(formula, data = df, Hess = T)}
+    estimates_table = broom::tidy(fit) %>%
       filter(coefficient_type == 'coefficient') %>%
       mutate(p = pnorm(abs(statistic), lower.tail = F)*2) %>%
       mutate(low = exp(estimate-1.96*`std.error`),
@@ -127,16 +139,18 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
 
   }
   if(outcome_type == 'tobit'){
-    tobit_fit = VGAM::vglm(formula, VGAM::tobit(Upper = tobit_upper), data = df, weights = weights)
+    if(is.null(fit)){
+      fit = VGAM::vglm(formula, VGAM::tobit(Upper = tobit_upper), data = df, weights = weights)}
 
-    estimates_table = coef(summary(tobit_fit)) %>% as.data.frame() %>%
+    estimates_table = coef(summary(fit)) %>% as.data.frame() %>%
       add_column(term = rownames(.)) %>%
       mutate(low = Estimate-1.96*`Std. Error`,
              up = Estimate+1.96*`Std. Error`) %>%
       select(term, coef = Estimate, low, up, p = `Pr(>|z|)`)
   }
   if(outcome_type == 'normal_gee'){
-    fit = gee::gee(formula, data = df, id = id, corstr = "unstructured")
+    if(is.null(fit)){
+      fit = gee::gee(formula, data = df, id = id, corstr = "unstructured")}
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
       add_column(term = rownames(.)) %>%
       mutate(low = Estimate - 1.96*`Robust S.E.`,
@@ -146,7 +160,8 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
 
   }
   if(outcome_type == 'binary_gee'){
-    fit = gee::gee(formula, data = df, family = "binomial", id = id, corstr = "unstructured")
+    if(is.null(fit)){
+      fit = gee::gee(formula, data = df, family = "binomial", id = id, corstr = "unstructured")}
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
       add_column(term = rownames(.)) %>%
       mutate(OR = exp(Estimate),
@@ -157,7 +172,8 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
 
   }
   if(outcome_type == 'poisson_gee'){
-    fit = gee::gee(formula, data = df, family = "poisson", id = id, corstr = "unstructured")
+    if(is.null(fit)){
+      fit = gee::gee(formula, data = df, family = "poisson", id = id, corstr = "unstructured")}
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
       rownames_to_column('term') %>%
       mutate(RR = exp(Estimate),
@@ -168,7 +184,8 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
 
   }
   if(outcome_type == 'ordinal_gee'){
-    fit = multgee::ordLORgee(formula, id = id, data = df)
+    if(is.null(fit)){
+      fit = multgee::ordLORgee(formula, id = id, data = df)}
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
       add_column(term = rownames(.)) %>%
       mutate(OR = exp(Estimate),
@@ -178,7 +195,8 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
   }
 
   if(outcome_type == 'lme'){
-    fit = nlme::lme(formula, random = ~1|id, na.action = na.omit, data = df)
+    if(is.null(fit)){
+      fit = nlme::lme(formula, random = ~1|id, na.action = na.omit, data = df)}
     CI = nlme::intervals(fit)$fixed %>% as.data.frame() %>% rownames_to_column('term')
     summary_fit = summary(fit)
     estimates_table = summary_fit$tTable %>% as.data.frame() %>% rownames_to_column('term') %>%
@@ -186,33 +204,50 @@ get_regression_estimates = function(df, outcome, predictor_vec, outcome_type, fo
       inner_join(CI) %>%
       select(term, coef = value, low = lower, up = upper, p=p_value)
   }
+  if(outcome_type == 'logistic_glme'){
+    if(is.null(fit)){
+      fit = lme4::glmer(formula, data = df, family = binomial)}
+
+    summary_fit = summary(fit)
+    estimates_table = summary_fit$coefficients %>% as.data.frame() %>% rownames_to_column('term') %>%
+      janitor::clean_names() %>%
+      mutate(OR = exp(estimate),
+             low = exp(estimate - 1.96*std_error),
+             up = exp(estimate + 1.96*std_error),
+             p = 2*pnorm(abs(z_value), lower.tail = F)) %>%
+      select(term, coef = OR, low, up, p)
+  }
   estimates_table = estimates_table %>%
     mutate(outcome = outcome) %>%
     mutate(p = ifelse(p<0.001, '<0.001', as.character(round(p,3))))
 
   if(outcome_type %in% c('linear', 'tobit', 'normal_gee', 'lme')) {
     estimates_table = estimates_table %>%
-      mutate_at(vars(coef, low, up), ~ifelse(round(.,2) != 0, as.character(round(., 2)),
-                                             as.character(round(.,3)))) %>%
+      mutate_at(vars(coef, low, up),
+                ~ifelse(round(.,2) != 0, as.character(round(., 2)),
+                        as.character(round(.,3)))) %>%
       mutate(CI = paste0('(', low, ',', up, ')')) %>%
       mutate(CI = ifelse(term == 'AIC', NA, CI))  %>%
       select(outcome, term, estimate=coef, CI, p)}
   else {
     estimates_table = estimates_table %>%
-      mutate_at(vars(coef, low, up), ~ifelse(round(.,2) != 1, as.character(round(., 2)),
-                                             as.character(round(.,3)))) %>%
+      mutate_at(vars(coef, low, up),
+                ~ifelse(round(.,2) != 1, as.character(round(., 2)),
+                        as.character(round(.,3)))) %>%
       mutate(CI = paste0('(', low, ',', up, ')')) %>%
       mutate(CI = ifelse(term == 'AIC', NA, CI))
     if(outcome_type %in% c('poisson_gee', 'poisson')){
-      estimates_table = estimates_table %>%  select(outcome, term, RR=coef, CI, p)
+      estimates_table = estimates_table %>%
+        select(outcome, term, RR=coef, CI, p)
     }else{
-      estimates_table = estimates_table %>%  select(outcome, term, OR=coef, CI, p)
+      estimates_table = estimates_table %>%
+        select(outcome, term, OR=coef, CI, p)
     }
 
 
   }
 
-  if(format & is.null(interaction) &outcome_type == 'binary'){
+  if(is.null(fit) & format & is.null(interaction) &outcome_type == 'binary'){
     cat_vars = df %>% select(predictor_vec) %>% select_if(is.character) %>% colnames()
     fac_vars = df %>% select(predictor_vec) %>% select_if(is.factor) %>% colnames()
     numeric_vars = df %>%  select(predictor_vec) %>% select_if(is.numeric) %>% colnames()

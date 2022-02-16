@@ -5,12 +5,13 @@
 \title{Get a summary of regression results}
 \usage{
 get_regression_estimates(
-  df,
-  outcome,
-  predictor_vec,
+  df = NULL,
+  outcome = NULL,
+  predictor_vec = NULL,
   outcome_type,
   format = F,
   interaction = NULL,
+  fit = NULL,
   weights = NULL,
   tobit_upper = NULL,
   test_hypo = NULL,
@@ -20,22 +21,24 @@ get_regression_estimates(
 )
 }
 \arguments{
-\item{df}{A dataframe}
+\item{df}{A dataframe, optional if you provide fit}
 
-\item{outcome}{A string, the name of the outcome}
+\item{outcome}{A string, the name of the outcome, optional if you provide fit}
 
-\item{predictor_vec}{A character vector of predictors}
+\item{predictor_vec}{A character vector of predictors, optional if you provide fit}
 
 \item{outcome_type}{A string, can be one of these options:linear, binary, poisson, ordinal, tobit, normal_gee,
-binary_gee, poisson_gee, ordinal_gee, lme}
+binary_gee, poisson_gee, ordinal_gee, lme, logistic_glme}
 
 \item{format}{logical, format=T outputs a fomatted table, only supported for logistic regression}
 
-\item{interaction}{a character vector of interaction terms}
+\item{interaction}{a character vector of interaction terms, optional if you provide fit}
 
-\item{weights}{a numeric vector of weights}
+\item{fit}{A fitted model object, optional if you provide df, outcome and predictor_vec}
 
-\item{tobit_upper}{a number, the upper bound of tobit models}
+\item{weights}{a numeric vector of weights, optional if you provide fit}
+
+\item{tobit_upper}{a number, the upper bound of tobit models, optional if you provide fit}
 
 \item{test_hypo}{a linear hypothesis, only for linear regression}
 
@@ -49,5 +52,7 @@ binary_gee, poisson_gee, ordinal_gee, lme}
 A dataframe or a formatted html table
 }
 \description{
-This function summarizes the results for multiple types of regression
+This function summarizes the results for multiple types of regression.
+You can specify the model strudture by providing the dataset, outcome and predictors.
+Alternatively, you can directly provide the fitted model object.
 }

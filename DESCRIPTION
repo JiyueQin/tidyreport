@@ -6,7 +6,7 @@ Authors@R:
            family = "Qin",
            role = c("aut", "cre"),
            email = "jiyue.qin@einsteinmed.org")
-Description: A pipeline to conduct common statistical analyses, especially those done in the field of epidemiology and biostatistics and generate clean/formatted tables from the statistical output. The analyses include sample descriptive statistics, univariable testing (Wilcoxon rank sum, KW tests, Chisq/Fisher), regression analysis(linear, logistic, tobit, ordinal, LME, Normal GEE, Logistic GEE, Poisson GEE, Ordinal GEE, cox). The generated tables can be readily incorporated into Excel or Word for scientific paper writing.
+Description: A pipeline to conduct common statistical analyses, especially those done in the field of epidemiology and biostatistics and generate clean/formatted tables from the statistical output. The analyses include sample descriptive statistics, univariable testing (Wilcoxon rank sum, KW tests, Chisq/Fisher), regression analysis(linear, logistic, tobit, ordinal, LME, Logistiv GLME, Normal GEE, Logistic GEE, Poisson GEE, Ordinal GEE, cox). The generated tables can be readily incorporated into Excel or Word for scientific paper writing.
 License: MIT
 Encoding: UTF-8
 LazyData: true
