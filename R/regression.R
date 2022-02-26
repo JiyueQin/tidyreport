@@ -142,8 +142,8 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
     if(is.null(fit)){
       fit = VGAM::vglm(formula, VGAM::tobit(Upper = tobit_upper), data = df, weights = weights)}
 
-    estimates_table = coef(summary(fit)) %>% as.data.frame() %>%
-      add_column(term = rownames(.)) %>%
+    estimates_table = VGAM::coef(summary(fit)) %>% as.data.frame() %>%
+      rownames_to_column('term') %>%
       mutate(low = Estimate-1.96*`Std. Error`,
              up = Estimate+1.96*`Std. Error`) %>%
       select(term, coef = Estimate, low, up, p = `Pr(>|z|)`)
@@ -152,7 +152,7 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
     if(is.null(fit)){
       fit = gee::gee(formula, data = df, id = id, corstr = "unstructured")}
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
-      add_column(term = rownames(.)) %>%
+      rownames_to_column('term') %>%
       mutate(low = Estimate - 1.96*`Robust S.E.`,
              up = Estimate + 1.96*`Robust S.E.`,
              p = 2*pnorm(abs(`Robust z`), lower.tail = F)) %>%
@@ -163,7 +163,7 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
     if(is.null(fit)){
       fit = gee::gee(formula, data = df, family = "binomial", id = id, corstr = "unstructured")}
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
-      add_column(term = rownames(.)) %>%
+      rownames_to_column('term') %>%
       mutate(OR = exp(Estimate),
              low = exp(Estimate - 1.96*`Robust S.E.`),
              up = exp(Estimate + 1.96*`Robust S.E.`),
@@ -187,7 +187,7 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
     if(is.null(fit)){
       fit = multgee::ordLORgee(formula, id = id, data = df)}
     estimates_table = summary(fit)$coef %>% as.data.frame() %>%
-      add_column(term = rownames(.)) %>%
+      rownames_to_column('term') %>%
       mutate(OR = exp(Estimate),
              low = exp(Estimate - 1.96*san.se),
              up = exp(Estimate + 1.96*san.se)) %>%
