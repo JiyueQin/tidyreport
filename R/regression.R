@@ -68,6 +68,7 @@ test_linear_hypo = function(fit, hypo){
 get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = NULL, outcome_type, format = F, interaction = NULL,
                                     fit = NULL, weights = NULL, tobit_upper = NULL, test_hypo = NULL, aic = F, highlight=F, highlight_p=0.05){
   if(is.null(fit)){
+    provide_fit = F
     formula_char = paste0(outcome, '~', paste(predictor_vec, collapse = '+'))
     if(!is.null(interaction))
     {inter_term = paste(interaction, collapse = '*')
@@ -247,7 +248,7 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
 
   }
 
-  if(is.null(fit) & format & is.null(interaction) &outcome_type == 'binary'){
+  if(!provide_fit & format & is.null(interaction) &outcome_type == 'binary'){
     cat_vars = df %>% select(predictor_vec) %>% select_if(is.character) %>% colnames()
     fac_vars = df %>% select(predictor_vec) %>% select_if(is.factor) %>% colnames()
     numeric_vars = df %>%  select(predictor_vec) %>% select_if(is.numeric) %>% colnames()
