@@ -82,7 +82,7 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
     if(str_detect(outcome_type, 'gee|lme')){
       if(!'id'%in% colnames(df)){stop('Please make sure there is a column named `id` in your data!')}
       if(any(sort(df$id)!=df$id)){stop("Please make sure data is sorted by ID!")}}
-  }
+  }else{provide_fit = T}
 
   if(outcome_type == 'linear') {
     if(is.null(fit)){
