@@ -144,6 +144,10 @@ get_numeric_desc = function(df, col, median = F, detail = F, detail_simple = F, 
 #'
 
 get_desc_stat = function(dat, raw = F, raw_name = F, raw_with_header = F, median_vars = NULL, detail = F, detail_simple = F, extra_col = F, sort = F){
+  if('grouped_df' %in% class(dat)){
+    stop('The data is a grouped df. Please remove the grouping!')
+  }
+  dat = na_to_unknown(dat)
   vars_order = tibble(var = colnames(dat), seq = 1:ncol(dat))
   numeric_vars = dat %>% select_if(is.numeric) %>% colnames()
   if(length(numeric_vars != 0)){
@@ -234,18 +238,19 @@ get_desc_stat = function(dat, raw = F, raw_name = F, raw_with_header = F, median
 
 
   if(raw|raw_with_header|extra_col) {desc_output} else {
+    kbl_names = colnames(desc_output)
+    kbl_names[1] = ''
     if(detail|detail_simple){
-      desc_output %>% kable() %>%  kable_styling(full_width = F, position = "left") %>%
+      desc_output %>% kable(col.names = kbl_names) %>%  kable_styling(full_width = F, position = "left") %>%
         add_indent(get_row_number_indent(desc_output, use_blank = T))
     }else{
-      desc_output %>% kable() %>%  kable_styling(full_width = F, position = "left") %>%
+      desc_output %>% kable(col.names = kbl_names) %>%  kable_styling(full_width = F, position = "left") %>%
         add_indent(get_row_number_indent(desc_output))
     }
 
   }
 
 }
-
 #####################################################################################
 #     Function get_numeric_p - get p value of non-parametric tests
 #           to compare if a grouping variable affects a numeric variable
@@ -356,8 +361,9 @@ get_group_compare = function(df, grouping, raw = F, format = T, paired = F){
 ######################################################################################
 
 dichotomize_variable = function(dat, var, group){
-  dat %>% mutate(!!var := ifelse(!!sym(var) == !!group, !!group, 'other'))
+  dat %>% mutate(!!var := ifelse(!!sym(var) == !!group, !!group, '_other_'))
 }
+
 
 
 #####################################################################################
@@ -405,13 +411,16 @@ dichotomize_compare = function(dat, var, grouping){
 get_desc_stat_grouping = function(dat, grouping, test=T, raw=F, median_vars = NULL, detail = F, detail_simple = F,
                                   highlight=F, highlight_p=0.05, paired = F,
                                   sort = F, dichotomize=F){
+  if('grouped_df' %in% class(dat)){
+    stop('The data is a grouped df. Please remove the grouping!')
+  }
   dat = dat %>% mutate_at(grouping, as.character)
 
   groups = dat %>% pull(grouping) %>% unique() %>% sort(na.last=T)
   if(anyNA(groups)){stop(paste('There is NA in', grouping, '. Please check.'))}
 
   dat_lists = map(groups, ~dat %>% filter(!!sym(grouping) == .x) %>%
-                    select(-grouping) %>% na_to_unknown)
+                    select(-grouping))
 
   summary_table = map2(dat_lists, groups,
                        ~get_desc_stat(.x, raw_name = T,raw_with_header = T,
@@ -420,7 +429,7 @@ get_desc_stat_grouping = function(dat, grouping, test=T, raw=F, median_vars = NU
     reduce(full_join, by = "variable") %>%
     mutate_all(~ifelse(is.na(.), '0(0)', .))
 
-  summary_table = dat %>% select(-grouping) %>% na_to_unknown() %>%
+  summary_table = dat %>% select(-grouping)  %>%
     get_desc_stat(extra_col = T, median_vars = median_vars, detail = detail, detail_simple = detail_simple, sort = sort) %>%
     full_join(summary_table)
 
@@ -428,11 +437,13 @@ get_desc_stat_grouping = function(dat, grouping, test=T, raw=F, median_vars = NU
   if(test|highlight){
     test_summary =get_group_compare(dat, grouping, raw = T, format = T, paired = paired)
     if(dichotomize){
-      cat_vars = dat %>% select(-!!sym(grouping)) %>%
-        mutate_if(is.factor, as.character) %>%
-        select_if(is.character) %>% colnames()
+      cat_vars_atleast3 = dat %>% na_to_unknown %>% select(-!!sym(grouping)) %>%
+        select_if(is.character) %>%
+        map_df(~tibble(n_groups = n_distinct(.x)), .id = 'var') %>%
+        filter(n_groups>2) %>% pull(var)
+
       sig_cat_vars = test_summary %>%
-        filter(variable %in% cat_vars) %>%
+        filter(variable %in% cat_vars_atleast3) %>%
         filter(suppressWarnings(as.numeric(`P Value`))<highlight_p |`P Value` == '<0.001') %>% pull(variable)
 
       test_summary = bind_rows(test_summary,
@@ -451,6 +462,8 @@ get_desc_stat_grouping = function(dat, grouping, test=T, raw=F, median_vars = NU
   }
 
   if(raw) {summary_table} else {
+    kbl_names = colnames(summary_table)
+    kbl_names[1] = ''
 
     if(highlight){
       summary_table =  summary_table %>%
@@ -459,17 +472,17 @@ get_desc_stat_grouping = function(dat, grouping, test=T, raw=F, median_vars = NU
                                                 `P Value` == '<0.001') & `P Value` != '',
                                              "yellow", "white")))
       if(detail|detail_simple){
-        summary_table %>% kable(escape =F) %>% kable_styling(full_width = F, position = "left") %>%
+        summary_table %>% kable(escape =F, col.names = kbl_names) %>% kable_styling(full_width = F, position = "left") %>%
           add_indent(get_row_number_indent(summary_table, use_blank = T))
       }else {
-        summary_table %>% kable(escape=F) %>% kable_styling(full_width = F, position = "left") %>%
+        summary_table %>% kable(escape=F, col.names = kbl_names) %>% kable_styling(full_width = F, position = "left") %>%
           add_indent(get_row_number_indent(summary_table))}
     }else{
       if(detail|detail_simple){
-        summary_table %>% kable() %>% kable_styling(full_width = F, position = "left") %>%
+        summary_table %>% kable(col.names = kbl_names) %>% kable_styling(full_width = F, position = "left") %>%
           add_indent(get_row_number_indent(summary_table, use_blank = T))
       }else {
-        summary_table %>% kable() %>% kable_styling(full_width = F, position = "left") %>%
+        summary_table %>% kable(col.names = kbl_names) %>% kable_styling(full_width = F, position = "left") %>%
           add_indent(get_row_number_indent(summary_table))}
 
     }
