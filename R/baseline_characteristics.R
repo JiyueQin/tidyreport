@@ -238,13 +238,14 @@ get_desc_stat = function(dat, raw = F, raw_name = F, raw_with_header = F, median
 
 
   if(raw|raw_with_header|extra_col) {desc_output} else {
-    kbl_names = colnames(desc_output)
-    kbl_names[1] = ''
+    # remove "variable" won't work when you copy-paste the table into EXCEL
+    # kbl_names = colnames(desc_output)
+    # kbl_names[1] = ''
     if(detail|detail_simple){
-      desc_output %>% kable(col.names = kbl_names) %>%  kable_styling(full_width = F, position = "left") %>%
+      desc_output %>% kable() %>%  kable_styling(full_width = F, position = "left") %>%
         add_indent(get_row_number_indent(desc_output, use_blank = T))
     }else{
-      desc_output %>% kable(col.names = kbl_names) %>%  kable_styling(full_width = F, position = "left") %>%
+      desc_output %>% kable() %>%  kable_styling(full_width = F, position = "left") %>%
         add_indent(get_row_number_indent(desc_output))
     }
 
@@ -462,9 +463,6 @@ get_desc_stat_grouping = function(dat, grouping, test=T, raw=F, median_vars = NU
   }
 
   if(raw) {summary_table} else {
-    kbl_names = colnames(summary_table)
-    kbl_names[1] = ''
-
     if(highlight){
       summary_table =  summary_table %>%
         mutate(`P Value`= cell_spec(`P Value`, background =
@@ -472,17 +470,17 @@ get_desc_stat_grouping = function(dat, grouping, test=T, raw=F, median_vars = NU
                                                 `P Value` == '<0.001') & `P Value` != '',
                                              "yellow", "white")))
       if(detail|detail_simple){
-        summary_table %>% kable(escape =F, col.names = kbl_names) %>% kable_styling(full_width = F, position = "left") %>%
+        summary_table %>% kable(escape =F) %>% kable_styling(full_width = F, position = "left") %>%
           add_indent(get_row_number_indent(summary_table, use_blank = T))
       }else {
-        summary_table %>% kable(escape=F, col.names = kbl_names) %>% kable_styling(full_width = F, position = "left") %>%
+        summary_table %>% kable(escape=F) %>% kable_styling(full_width = F, position = "left") %>%
           add_indent(get_row_number_indent(summary_table))}
     }else{
       if(detail|detail_simple){
-        summary_table %>% kable(col.names = kbl_names) %>% kable_styling(full_width = F, position = "left") %>%
+        summary_table %>% kable() %>% kable_styling(full_width = F, position = "left") %>%
           add_indent(get_row_number_indent(summary_table, use_blank = T))
       }else {
-        summary_table %>% kable(col.names = kbl_names) %>% kable_styling(full_width = F, position = "left") %>%
+        summary_table %>% kable() %>% kable_styling(full_width = F, position = "left") %>%
           add_indent(get_row_number_indent(summary_table))}
 
     }
