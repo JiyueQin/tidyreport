@@ -284,3 +284,84 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
   }
 
 }
+
+
+#' Format p values
+#'
+#' This function formats the p values in a table
+#
+
+#' @param df A tibble or dataframe of the data
+#' @param cut A number of the significance cut off, default is 0.05
+#' @param p_names A character vector of the column names of p values, default is 'p'
+#' @param col_names A character vector of output table column names, default is NA, which uses original names
+#' @return A html table
+#' @import dplyr
+#' @export
+#'
+
+format_p = function(df, cut = 0.05, p_names = 'p',col_names = NA){
+  df %>%
+    mutate_at(p_names, ~cell_spec(., background = ifelse((suppressWarnings(as.numeric(.))<0.05 |
+                                                            . == '<0.001') & ! . %in% c('--', ''),
+                                                         "yellow", "white"))) %>%
+    kbl(escape = F, col.names = col_names) %>% kable_styling(full_width = F)
+
+}
+
+
+
+#' Get regression results with multiple outcomes and exposures
+#'
+#' This function genartes regression results with multiple outcomes and exposures.
+#' For now, it only supports the interaction between one covariable and the exposure.
+
+#' @param df A tibble or dataframe of the data
+#' @param outcomes A character vector of outcomes
+#' @param exposures A character vector of exposures
+#' @param covariates A character vector of covariates
+#' @param outcome_type A string, can be one of these options:linear, binary, poisson, ordinal, tobit, normal_gee,
+#' binary_gee, poisson_gee, ordinal_gee, lme, logistic_glme
+#' @param sub_var A string of the subgroup analysis variable
+#' @param sub_group A string of the subgroup
+#' @param interaction_var a sting of the interaction covarite
+#' @param multiply logical, multiply = T specifies all possible combinations of outcomes and exposures
+#' @return A tibble
+#' @import dplyr
+#' @export
+
+
+
+map2_get_regression = function(df, outcomes, exposures, covariates,
+                               outcome_type, sub_var = NULL,
+                               sub_group = NULL, interaction_var =NULL, multiply = T){
+  if(multiply){
+    outcome_vec = rep(outcomes,length(exposures))
+    exposure_vec = rep(exposures, each = length(outcomes))
+  }else{
+    outcome_vec = outcomes
+    exposure_vec = exposures
+  }
+  if(is.null(sub_var)){
+    if(is.null(interaction_var)){
+      out = map2_df(outcome_vec,exposure_vec,
+                    ~get_regression_estimates(df, .x, c(.y, covariates), outcome_type) %>%
+                      mutate(exposure = .y))
+    }
+    else{
+      out = map2_df(outcome_vec,exposure_vec,
+                    ~get_regression_estimates(df, .x, c(.y, covariates), outcome_type, interaction = c(.y, interaction_var)) %>%
+                      mutate(exposure = .y))
+    }
+
+  }else{
+    sub_df = df %>% filter(!!sym(sub_var) == sub_group)
+    covariates = covariates[covariates!=sub_var]
+    out = map2_df(outcome_vec,exposure_vec,
+                  ~get_regression_estimates(sub_df, .x, c(.y, covariates), outcome_type) %>%
+                    mutate(exposure = .y))
+
+  }
+  out %>% select(outcome, exposure, everything())
+
+}
