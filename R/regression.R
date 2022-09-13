@@ -41,15 +41,19 @@ test_linear_hypo = function(fit, hypo){
 #' Get a summary of regression results
 #'
 #' This function summarizes the results for multiple types of regression.
-#' You can specify the model strudture by providing the dataset, outcome and predictors.
+#' You can specify the model structure by providing the dataset, outcome and predictors.
 #' Alternatively, you can directly provide the fitted model object.
 #'
 #' @param df A dataframe, optional if you provide fit
 #' @param outcome A string, the name of the outcome, optional if you provide fit
 #' @param predictor_vec A character vector of predictors, optional if you provide fit
 #' @param outcome_type A string, can be one of these options:linear, binary, poisson, ordinal, tobit, normal_gee,
-#' binary_gee, poisson_gee, ordinal_gee, lme, logistic_glme
-#' @param format logical, format=T outputs a fomatted table, only supported for logistic regression
+#' binary_gee, poisson_gee, ordinal_gee, lme(random intercept), lme2(random intercept and random slope), logistic_glme, cox
+#' @param random_slope_var A string, the name of the random slope variable, optional
+#' @param lme_method A string, can be 'REML' or "ML", default is "REML"
+#' @param time_var A string, the name of the time variable for cox regression
+#' @param event_var A string, the name of the event variable for cox regression
+#' @param format logical, format=T outputs a formatted table, only supported for logistic regression
 #' @param fit A fitted model object, optional if you provide df, outcome and predictor_vec
 #' @param interaction a character vector of interaction terms, optional if you provide fit
 #' @param weights a numeric vector of weights, optional if you provide fit
@@ -65,24 +69,31 @@ test_linear_hypo = function(fit, hypo){
 #'
 
 
-get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = NULL, outcome_type, format = F, interaction = NULL,
-                                    fit = NULL, weights = NULL, tobit_upper = NULL, test_hypo = NULL, aic = F, highlight=F, highlight_p=0.05){
+get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = NULL,
+                                    outcome_type, random_slope_var = NULL,
+                                    lme_method = 'REML', time_var = NULL, event_var = NULL, format = F,
+                                    interaction = NULL,fit = NULL, weights = NULL,
+                                    tobit_upper = NULL, test_hypo = NULL, aic = F,
+                                    highlight=F, highlight_p=0.05){
   if(is.null(fit)){
     provide_fit = F
+    if(outcome_type == 'cox'){outcome = 'surv_obj'}
     formula_char = paste0(outcome, '~', paste(predictor_vec, collapse = '+'))
     if(!is.null(interaction))
     {inter_term = paste(interaction, collapse = '*')
     formula_char = paste0(formula_char, '+',inter_term )}
     if(outcome_type == 'logistic_glme'){
-      formula_char = paste0(formula_char, '+(1|id)')
-    }
+      formula_char = paste0(formula_char, '+(1|id)')}
 
     formula = as.formula(formula_char)
 
     if(str_detect(outcome_type, 'gee|lme')){
-      if(!'id'%in% colnames(df)){stop('Please make sure there is a column named `id` in your data!')}
-      if(any(sort(df$id)!=df$id)){stop("Please make sure data is sorted by ID!")}}
-  }else{provide_fit = T}
+      if(!'id'%in% colnames(df)){
+        stop('Please make sure there is a column named `id` in your data!')}
+      if(any(sort(df$id)!=df$id)){
+        stop("Please make sure data is sorted by ID!")}}
+  }
+  else{provide_fit = T}
 
   if(outcome_type == 'linear') {
     if(is.null(fit)){
@@ -195,9 +206,17 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
       select(term, coef = OR, low, up, p = "Pr(>|san.z|)")
   }
 
-  if(outcome_type == 'lme'){
+  if(outcome_type %in% c('lme', 'lme2')){
     if(is.null(fit)){
-      fit = nlme::lme(formula, random = ~1|id, na.action = na.omit, data = df)}
+      if(outcome_type == 'lme'){
+        fit = nlme::lme(formula, random = ~1|id, na.action = na.omit, data = df, method = lme_method)
+      }
+      if(outcome_type == 'lme2'){
+        formula_char2 = paste0('~', random_slope_var,'|id')
+        formula2 = as.formula(formula_char2)
+        fit = nlme::lme(formula, random = formula2, na.action = na.omit, data = df, method = lme_method)
+      }
+    }
     CI = nlme::intervals(fit)$fixed %>% as.data.frame() %>% rownames_to_column('term')
     summary_fit = summary(fit)
     estimates_table = summary_fit$tTable %>% as.data.frame() %>% rownames_to_column('term') %>%
@@ -218,11 +237,24 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
              p = 2*pnorm(abs(z_value), lower.tail = F)) %>%
       select(term, coef = OR, low, up, p)
   }
+  if(outcome_type == 'cox'){
+    outcome = paste('time to', event_var)
+    if(is.null(fit)){
+      surv_obj = survival::Surv(df %>% pull(time_var), df %>% pull(event_var))
+      fit = survival::coxph(formula, data = df)}
+    summary_fit = summary(fit)
+    estimates_table = summary_fit$conf.int %>% as.data.frame() %>%
+      rownames_to_column('term') %>%
+      add_column(p = summary_fit$coefficients[,5] ) %>%
+      janitor::clean_names() %>%
+      select(term, coef = exp_coef , low = lower_95, up = upper_95, p)
+  }
+
   estimates_table = estimates_table %>%
     mutate(outcome = outcome) %>%
     mutate(p = ifelse(p<0.001, '<0.001', as.character(round(p,3))))
 
-  if(outcome_type %in% c('linear', 'tobit', 'normal_gee', 'lme')) {
+  if(outcome_type %in% c('linear', 'tobit', 'normal_gee', 'lme', 'lme2')) {
     estimates_table = estimates_table %>%
       mutate_at(vars(coef, low, up),
                 ~ifelse(round(.,2) != 0, as.character(round(., 2)),
@@ -240,6 +272,10 @@ get_regression_estimates = function(df = NULL, outcome = NULL, predictor_vec = N
     if(outcome_type %in% c('poisson_gee', 'poisson')){
       estimates_table = estimates_table %>%
         select(outcome, term, RR=coef, CI, p)
+    }
+    if(outcome_type == 'cox'){
+      estimates_table = estimates_table %>%
+        select(outcome, term, HR=coef, CI, p)
     }else{
       estimates_table = estimates_table %>%
         select(outcome, term, OR=coef, CI, p)
@@ -331,9 +367,9 @@ format_p = function(df, cut = 0.05, p_names = 'p',col_names = NA){
 #' @export
 
 
-
 map2_get_regression = function(df, outcomes, exposures, covariates,
-                               outcome_type, sub_var = NULL,
+                               outcome_type, random_slope_var = NULL,
+                               lme_method = 'REML', sub_var = NULL,
                                sub_group = NULL, interaction_var =NULL, multiply = T){
   if(multiply){
     outcome_vec = rep(outcomes,length(exposures))
@@ -345,12 +381,12 @@ map2_get_regression = function(df, outcomes, exposures, covariates,
   if(is.null(sub_var)){
     if(is.null(interaction_var)){
       out = map2_df(outcome_vec,exposure_vec,
-                    ~get_regression_estimates(df, .x, c(.y, covariates), outcome_type) %>%
+                    ~get_regression_estimates(df, .x, c(.y, covariates), outcome_type, random_slope_var, lme_method) %>%
                       mutate(exposure = .y))
     }
     else{
       out = map2_df(outcome_vec,exposure_vec,
-                    ~get_regression_estimates(df, .x, c(.y, covariates), outcome_type, interaction = c(.y, interaction_var)) %>%
+                    ~get_regression_estimates(df, .x, c(.y, covariates), outcome_type, random_slope_var, lme_method, interaction = c(.y, interaction_var)) %>%
                       mutate(exposure = .y))
     }
 
@@ -358,7 +394,7 @@ map2_get_regression = function(df, outcomes, exposures, covariates,
     sub_df = df %>% filter(!!sym(sub_var) == sub_group)
     covariates = covariates[covariates!=sub_var]
     out = map2_df(outcome_vec,exposure_vec,
-                  ~get_regression_estimates(sub_df, .x, c(.y, covariates), outcome_type) %>%
+                  ~get_regression_estimates(sub_df, .x, c(.y, covariates), outcome_type, random_slope_var, lme_method) %>%
                     mutate(exposure = .y))
 
   }

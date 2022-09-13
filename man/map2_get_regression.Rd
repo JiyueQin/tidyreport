@@ -10,6 +10,8 @@ map2_get_regression(
   exposures,
   covariates,
   outcome_type,
+  random_slope_var = NULL,
+  lme_method = "REML",
   sub_var = NULL,
   sub_group = NULL,
   interaction_var = NULL,

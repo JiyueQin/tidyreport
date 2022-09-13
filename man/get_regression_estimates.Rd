@@ -9,6 +9,10 @@ get_regression_estimates(
   outcome = NULL,
   predictor_vec = NULL,
   outcome_type,
+  random_slope_var = NULL,
+  lme_method = "REML",
+  time_var = NULL,
+  event_var = NULL,
   format = F,
   interaction = NULL,
   fit = NULL,
@@ -28,9 +32,17 @@ get_regression_estimates(
 \item{predictor_vec}{A character vector of predictors, optional if you provide fit}
 
 \item{outcome_type}{A string, can be one of these options:linear, binary, poisson, ordinal, tobit, normal_gee,
-binary_gee, poisson_gee, ordinal_gee, lme, logistic_glme}
+binary_gee, poisson_gee, ordinal_gee, lme(random intercept), lme2(random intercept and random slope), logistic_glme, cox}
 
-\item{format}{logical, format=T outputs a fomatted table, only supported for logistic regression}
+\item{random_slope_var}{A string, the name of the random slope variable, optional}
+
+\item{lme_method}{A string, can be 'REML' or "ML", default is "REML"}
+
+\item{time_var}{A string, the name of the time variable for cox regression}
+
+\item{event_var}{A string, the name of the event variable for cox regression}
+
+\item{format}{logical, format=T outputs a formatted table, only supported for logistic regression}
 
 \item{interaction}{a character vector of interaction terms, optional if you provide fit}
 
@@ -53,6 +65,6 @@ A dataframe or a formatted html table
 }
 \description{
 This function summarizes the results for multiple types of regression.
-You can specify the model strudture by providing the dataset, outcome and predictors.
+You can specify the model structure by providing the dataset, outcome and predictors.
 Alternatively, you can directly provide the fitted model object.
 }

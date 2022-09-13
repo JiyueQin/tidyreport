@@ -15,5 +15,5 @@ cox_summary(fit, raw = F)
 A summary table in html format
 }
 \description{
-This function gets coef summary table from a cox model`
+This function gets coef summary table from a cox model, can be achieved by `get_regression_estimates`.
 }
