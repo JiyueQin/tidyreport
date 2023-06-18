@@ -28,7 +28,8 @@ get_row_number_indent = function(dat, use_blank = F){
 #
 #############################################################################################
 
-get_char_desc = function(df, col, raw = F){
+get_char_desc = function(df, col, raw = F, CI=F, CI_method = 'wilson',
+                         alpha=0.05){
   if (anyNA(df %>% pull(col))) {stop(paste('There is NA in', col, '. Please check.'))}
   raw_char = df %>% group_by(!!sym(col)) %>%
     summarise(n = n()) %>%
@@ -39,26 +40,53 @@ get_char_desc = function(df, col, raw = F){
     mutate(stat = paste0(n, '(', ratio, ')'))
 
 
+  if(CI){
+    CI_res = map_df(as.numeric(raw_char$n), ~binom::binom.confint(.x, nrow(df),
+                                                                  conf.level = 1-alpha,
+                                                                  methods = CI_method)) %>%
+      select(lower, upper) %>%
+      mutate_all(~round(.*100, 1)) %>%
+      mutate(CI = paste0(lower, ',', upper ))
+    raw_char = cbind(raw_char, CI = CI_res$CI)
+
+  }
+
   if(raw){
-    raw_char %>% unite('variable', var, variable) %>% select(variable, stat)
+    raw_char %>% unite('variable', var, variable) %>%
+      select(variable, stat, any_of("CI"))
 
   }
   else{
-    raw_char %>%  unite('variable', var, variable) %>%
-      select(variable, stat) %>%
-      add_row(stat = '',
-              variable = paste0(toupper_first(col), ', N(%)') ,
-              .before = 1)}
+    if (CI) {
+      raw_char %>%  unite('variable', var, variable) %>%
+        select(variable, stat, any_of("CI")) %>%
+        add_row(
+          stat = '',
+          variable = paste0(toupper_first(col), ', N(%)'),
+          CI = '',
+          .before = 1
+        )
+    } else{
+      raw_char %>%  unite('variable', var, variable) %>%
+        select(variable, stat, any_of("CI")) %>%
+        add_row(
+          stat = '',
+          variable = paste0(toupper_first(col), ', N(%)'),
+          .before = 1
+        )
+    }
+  }
 
 }
-
 
 ########################################################################################
 #     Function get_numeric_desc - get descriptive stat for one numeric variable,
 #                                 NA will be removed to calculate the statistics
 #
 ######################################################################################
-get_numeric_desc = function(df, col, median = F, detail = F, detail_simple = F, raw = F){
+get_numeric_desc = function(df, col, median = F,
+                            detail = F, detail_simple = F, raw = F,
+                            CI=F,alpha=0.05){
   if(!detail & !detail_simple){
     if (anyNA(df %>% pull(col))) {message(paste('NA in', col, 'was removed'))}
   }
@@ -106,7 +134,23 @@ get_numeric_desc = function(df, col, median = F, detail = F, detail_simple = F, 
                                sd = sd(df %>% pull(col), na.rm = T),
                                variable = paste0(toupper_first(col), ', Mean(SD)')) %>%
       mutate_if(is.double, ~round(.,1)) %>%
-      mutate(stat = paste0(mean, '(', sd, ')'))}
+      mutate(stat = paste0(mean, '(', sd, ')'))
+
+    if(CI){
+      n_complete = length(na.omit(df %>% pull(col)))
+      out = out %>%
+        mutate(lower = mean-qnorm(1-alpha/2)*(sd/sqrt(n_complete)),
+               upper = mean+qnorm(1-alpha/2)*(sd/sqrt(n_complete)) ) %>%
+        mutate_at(vars(lower, upper), ~round(., 1)) %>%
+        mutate(CI = paste0(lower, ',',upper)) %>%
+        select(-lower, -upper)
+
+    }
+
+
+
+
+    }
     else {out = tibble(median = median(df %>% pull(col), na.rm = T),
                        Q1 = quantile(df %>% pull(col), 0.25, na.rm = T),
                        Q3 = quantile(df %>% pull(col), 0.75, na.rm = T),
@@ -117,7 +161,7 @@ get_numeric_desc = function(df, col, median = F, detail = F, detail_simple = F, 
   }
 
   out %>%
-    select(variable, stat) %>%
+    select(variable, stat, any_of("CI")) %>%
     mutate_if(is.numeric, as.character)
 
 
@@ -136,6 +180,9 @@ get_numeric_desc = function(df, col, median = F, detail = F, detail_simple = F, 
 #' @param detail_simple if you  want to get all the descriptive stat in a condensed version for continuous variables, default is F
 #' @param extra_col if you want to preserve the original variable column, default is F
 #' @param sort logical, sort =T sorts the variables based on their sequence in the data, default is F, which puts continuous variables first
+#' @param CI logical, CI=T outputs confidence intervals, default is F
+#' @param CI_method string, the method for the CI of proportions, default is 'wilson', see binom::binom.confint
+#' @param alpha numeric, the alpha level for CI, default is 0.05 for 95% CI
 #' @return A html table for descriptive statistics
 #' @importFrom kableExtra add_indent cell_spec collapse_rows kable_styling
 #' @importFrom knitr kable
@@ -143,7 +190,9 @@ get_numeric_desc = function(df, col, median = F, detail = F, detail_simple = F, 
 #'
 #'
 
-get_desc_stat = function(dat, raw = F, raw_name = F, raw_with_header = F, median_vars = NULL, detail = F, detail_simple = F, extra_col = F, sort = F){
+get_desc_stat = function(dat, raw = F, raw_name = F, raw_with_header = F, median_vars = NULL, detail = F, detail_simple = F, extra_col = F, sort = F,
+                         CI=F, CI_method = 'wilson',
+                         alpha=0.05){
   if('grouped_df' %in% class(dat)){
     stop('The data is a grouped df. Please remove the grouping!')
   }
@@ -172,7 +221,8 @@ get_desc_stat = function(dat, raw = F, raw_name = F, raw_with_header = F, median
           mutate(variable = toupper_first(variable))}
     }else{
       mean_numeric_vars = numeric_vars[!numeric_vars %in% median_vars]
-      numeric_output_mean = map_df(mean_numeric_vars, ~get_numeric_desc(dat, .x) %>%
+      numeric_output_mean = map_df(mean_numeric_vars, ~get_numeric_desc(dat, .x, CI=CI,
+                                                                        alpha=alpha) %>%
                                      mutate(var = .x))
       numeric_output_median = map_df(median_vars, ~get_numeric_desc(dat, .x, median = T) %>%
                                        mutate(var = .x))
@@ -192,18 +242,20 @@ get_desc_stat = function(dat, raw = F, raw_name = F, raw_with_header = F, median
 
   if(length(character_vars != 0)){
     if(raw){
-      character_output = map_df(character_vars, ~get_char_desc(dat, .x, raw = T) %>%
+      character_output = map_df(character_vars,
+                                ~get_char_desc(dat, .x, raw = T,
+                                               CI=CI, CI_method = CI_method,alpha=alpha) %>%
                                   mutate(var = .x))
     }else if (raw_with_header){
-      character_output = map_df(character_vars, ~get_char_desc(dat, .x) %>%
+      character_output = map_df(character_vars, ~get_char_desc(dat, .x, CI=CI, CI_method = CI_method,alpha=alpha) %>%
                                   mutate(var = .x))}
     else if(extra_col) {
-      character_output = map_df(character_vars, ~get_char_desc(dat, .x) %>%
+      character_output = map_df(character_vars, ~get_char_desc(dat, .x, CI=CI, CI_method = CI_method,alpha=alpha) %>%
                                   mutate(name = str_remove(variable, paste0(.x, '_'))) %>%
                                   mutate(var = .x)) %>%
         mutate(name = toupper_first(name))}
     else{
-      character_output = map_df(character_vars, ~get_char_desc(dat, .x) %>%
+      character_output = map_df(character_vars, ~get_char_desc(dat, .x, CI=CI, CI_method = CI_method,alpha=alpha) %>%
                                   mutate(variable = str_remove(variable, paste0(.x, '_'))) %>%
                                   mutate(var = .x)) %>%
         mutate(variable = toupper_first(variable))}
