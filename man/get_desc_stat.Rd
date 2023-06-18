@@ -13,7 +13,10 @@ get_desc_stat(
   detail = F,
   detail_simple = F,
   extra_col = F,
-  sort = F
+  sort = F,
+  CI = F,
+  CI_method = "wilson",
+  alpha = 0.05
 )
 }
 \arguments{
@@ -34,6 +37,12 @@ get_desc_stat(
 \item{extra_col}{if you want to preserve the original variable column, default is F}
 
 \item{sort}{logical, sort =T sorts the variables based on their sequence in the data, default is F, which puts continuous variables first}
+
+\item{CI}{logical, CI=T outputs confidence intervals, default is F}
+
+\item{CI_method}{string, the method for the CI of proportions, default is 'wilson', see binom::binom.confint}
+
+\item{alpha}{numeric, the alpha level for CI, default is 0.05 for 95% CI}
 }
 \value{
 A html table for descriptive statistics
